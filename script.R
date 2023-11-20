@@ -9,3 +9,8 @@ xml_base <-  htmlParse(html_base, asText = TRUE)
 title <- xpathSApply(xml_base,'//title')
 
 title[1]
+
+#pregunta 1.3
+list_texte <- xpathSApply(xml_base, "//a", xmlAttrs, 'href')
+
+class(list_texte)
