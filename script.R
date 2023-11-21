@@ -1,4 +1,5 @@
 #pregunta 1.1
+
 html_base <- httr::GET("https://www.mediawiki.org/wiki/MediaWiki")
 
 library(XML)
@@ -90,8 +91,7 @@ url_2_tbl <- df_links3 %>% group_by(url_cat)
 
 url_2_tbl <- df_links3 %>% group_by(url_cat,url) %>%  summarise(total_count_cat=n(), .groups = 'drop')
 
-hist(x = df_links3$url_cat, breaks = 10, col = "blue", main = "CVSSv3 Score
-distribution")
+hist(x = df_links3$url_cat, breaks = 10, col = "blue", main = " ")
 
 url_abs <- df_links3[df_links3$url_cat == 'absoluta',]
 

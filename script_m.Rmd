@@ -7,25 +7,179 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = T)
-source()
+source(file = 'script.R')
 ```
 
-## R Markdown
+## Pregunta 1
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+Pregunta 1: Queremos programar un programa de tipo web scrapping con el que podamos obtener una página web, mediante su URL, y poder analizar su contenido HTML con tal de extraer datos e información específica. Nuestro programa ha de ser capaz de cumplir con los siguientes pasos:
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+### Pregunta 1.1
 
-```{r cars}
-summary(cars)
+Descargar la página web de la URL indicada, y almacenarlo en un formato de R apto para ser tratado. El primer paso para realizar tareas de crawling y scraping es poder descargar los datos de la web. Para esto usaremos la capacidad de R y de sus librerías (httr y XML) para descargar webs y almacenarlas en variables que podamos convertir en un formato fácil de analizar (p.e. de HTML a XML).
+
+```{r list_texte}
+html_base <- httr::GET("https://www.mediawiki.org/wiki/MediaWiki")
+
+library(XML)
+
+xml_base <-  htmlParse(html_base, asText = TRUE)
+
+
 ```
 
-## Including Plots
+Al descargar para evitar problemas con los atributos no existentes, se procedio a utilizar "xmlAttrs" como variable en "xpathSApply". con lo cual se obtuvo una lista.
 
-You can also embed plots, for example:
+### Pregunta 1.2
+
+Analizar el contenido de la web, buscando el título de la página (que en HTML se etiqueta como "title"). En las cabeceras web encontramos información como el título, los ficheros de estilo visual, y meta-información como el nombre del autor de la página, una descripción de esta, el tipo de codificación de esta, o palabras clave que indican qué tipo de información contiene la página. Una vez descargada la página, y convertida a un formato analizable (como XML), buscaremos los elementos de tipo "title". P.e. "
+
+<title>Titulo de Página</title>
+
+".
+
+```{r list_texte}
+title <- xpathSApply(xml_base,'//title')
+
+print(title)
+```
+
+### Pregunta 1.3
+
+. Analizar el contenido de la web, buscando todos los enlaces (que en HTML se etiquetan como "a"), buscando el texto del enlace, así como la URL. Vamos a extraer, usando las funciones de búsqueda XML, todos los enlaces que salen de esta página con tal de listarlos y poder descargarlas más tarde. Sabemos que estos son elementos de tipo "<a>", que tienen el atributo "href" para indicar la URL del enlace. P.e. "<a href = ‘enlace’>Texto del Enlace</a>". Del enlace nos quedaremos con la URL de destino y con el valor del enlace (texto del enlace).
+
+```{r list_texte}
+list_texte <- xpathSApply(xml_base, "//a", xmlAttrs, 'href')
+
+print(list_texte)
+```
+
+### Pregunta 1.4
+
+. Generar una tabla con cada enlace encontrado, indicando el texto que acompaña el enlace, y el número de veces que aparece un enlace con ese mismo objetivo. En este paso nos interesa reunir los datos obtenidos en el anterior paso. Tendremos que comprobar, para cada enlace, cuantas veces aparece.
+
+```{r list_texte}
+library(dplyr)
+
+agg_tbl <- df_link %>% group_by(url,text) %>%  summarise(total_count=n(), .groups = 'drop')
+
+df_links2 <- agg_tbl %>% as.data.frame()
+
+print(df_links2)
+
+```
+
+### Pregunta 1.5
+
+Para cada enlace, seguirlo e indicar si está activo (podemos usar el código de status HTTP al hacer una petición a esa URL). En este paso podemos usar la función HEAD de la librería "httr", que en vez de descargarse la página como haría GET, solo consultamos los atributos de la página o fichero destino. HEAD nos retorna una lista de atributos, y de entre estos hay uno llamado "header" que contiene más atributos sobre la página buscada. Si seguimos podemos encontrar el "status_code" en "resultado\$status_code". El "status_code" nos indica el resultado de la petición de página o fichero. Este código puede indicar que la petición ha sido correcta (200), que no se ha encontrado (404), que el acceso está restringido (403), etc. 4 Actividad Evaluable 2 Seminario Internacional en Herramientas y Técnicas de Detección de Ciberamenazas - 2023 • Tened en cuenta que hay enlaces con la URL relativa, con forma "/xxxxxx/xxxxx/a.html". En este caso, podemos indicarle como "handle" el dominio de la página que estamos tratando, o añadirle el dominio a la URL con la función "paste". • Tened en cuenta que puede haber enlaces externos con la URL absoluta, con forma "<http://xxxxxx/xxxx/a.html>" (o https), que los trataremos directamente. • Tened en cuenta que puede haber enlaces que apunten a subdominios distintos, con forma "//subdominio/xxxx/xxxx/a.html". En este caso podemos adjuntarle el prefijo "https:" delante, convirtiendo la URL en absoluta. • Tened en cuenta URLS internas con tags, como por ejemplo "#search-p". Estos apuntan a la misma página en la que estamos, pero diferente altura de página. Equivale a acceder a la URL relativa de la misma página en la que estamos. Es recomendado poner un tiempo de espera entre petición y petición de pocos segundos (comando "Sys.sleep"), para evitar ser "baneados" por el servidor. Para poder examinar las URLs podemos usar expresiones regulares, funciones como "grep", o mirar si en los primeros caracteres de la URL encontramos "//" o "http". Para tratar las URLs podemos usar la ayuda de la función "paste", para manipular cadenas de caracteres y poder añadir prefijos a las URLs si fuera necesario.
 
 ```{r pressure, echo=FALSE}
-plot(pressure)
+getstatuscode <- function(url){
+  #Sys.sleep(runif(1, min=1, max=1))
+  demo1 <- httr::GET(urlstandar(url))
+  res <- head(demo1)
+  return(res$status_code)
+}
+
+
+urlstandar <- function(url){
+  print(url)
+  if (startsWith(url,'//')) {
+    updated_url <- gsub(" ", "", paste('https:',url))
+    return(updated_url)
+  }
+  if(startsWith(url,'/')){
+    updated_url <- gsub(" ", "", paste('https://www.mediawiki.org',url))
+    return(updated_url)
+  }
+  if(grepl('#', url)){
+    return('https://www.mediawiki.org/wiki/MediaWiki')
+  }
+  return(url)
+}
+
+
+df_links3 <- df_links2
+
+df_links3$estatus <- sapply(df_links3$url,getstatuscode)
+
+df_links3$enlace <- sapply(df_links3$url,urlstandar)
+
+print(df_links3)
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## pregunta 2
+
+Elaborad, usando las librerías de gráficos base y qplot (ggplot2), una infografía sobre los datos obtenidos. Tal infografía será una reunión de gráficos donde se muestren los siguientes detalles:
+
+### pregunta 2.1
+
+Un histograma con la frecuencia de aparición de los enlaces, pero separado por URLs absolutas (con "http...") y URLs relativas. El objetivo es ver en un histograma cuantas veces aparece cada URL, pero separando por URLs absolutas y relativas. Un primer paso es añadir a nuestro data.frame una columna indicando qué filas contienen URLs con "http" al inicio y cuáles no, indicando que la URL es absoluta. Después creamos un histograma para cada grupo: en caso de usar gráficos base, creamos un histograma para cada uno, y los juntamos con la función "par"; en caso de lattice o ggplot2, le pasamos los datos y le indicamos qué columna queremos que use para separar los datos.
+
+```{r pressure, echo=FALSE}
+ela_norela <- function(url){
+  if (startsWith(url,'//')) {
+    return('absoluta')
+  }
+  if (startsWith(url,'http')) {
+    return('absoluta')
+  }
+  if(startsWith(url,'/')){
+    return('relativa')
+  }
+  if(grepl('#', url)){
+    return('absoluta')
+  }
+  return(url)
+}
+
+df_links3$url_cat <- sapply(df_links3$url,rela_norela)
+
+library(ggplot2)
+
+par(mfrow = c(1, 2), mar = c(4, 4, 2, 1), oma = c(0, 0, 2, 0))
+with(airquality, {
+  plot(df_links3$total_count, Ozone, main = "Ozone and Wind")
+  plot(Solar.R, Ozone, main = "Ozone and Solar Radiation")
+  
+})
+
+url_2_tbl <- df_links3 %>% group_by(url_cat)
+
+url_2_tbl <- df_links3 %>% group_by(url_cat,url) %>%  summarise(total_count_cat=n(), .groups = 'drop')
+
+hist(x = df_links3$url_cat, breaks = 10, col = "blue", main = " ")
+
+url_abs <- df_links3[df_links3$url_cat == 'absoluta',]
+
+
+url_rela <- df_links3[df_links3$url_cat == 'relativa',]
+
+
+hist(x = df_links3$total_count, labels = df_links3$url, breaks = 10, col = "blue", main = "Frecuencia de aparicion de URL Absolutas")
+
+```
+
+### pregunta 2.2
+
+Un gráfico de barras indicando la suma de enlaces que apuntan a otros dominios o servicios (distinto a <https://www.mediawiki.org> en el caso de ejemplo) vs. la suma de los otros enlaces. Aquí queremos distinguir enlaces que apuntan a mediawiki versus el resto. Sabemos que las URLs relativas ya apuntan dentro, por lo tanto hay que analizar las URLs absolutas y comprobar que apunten a <https://www.mediawiki.org>. Añadiremos a nuestro data.frame una columna indicando si el enlace es interno o no. Usaremos base, lattice o ggplot para generar este gráfico de barras, donde cada barra indicará la suma de enlaces para cada grupo. El grafico resultado lo uniremos con los anteriores, en una sola imagen.
+
+```{r pressure, echo=FALSE}
+
+url_5_tbl <- df_links3 %>% group_by(estatus) %>%  summarise(total_count=n(), .groups = 'drop')
+
+porcentaje <- function(num){
+  dd <- paste((((num/166)*100)),"%")
+  return(dd)
+}
+
+ggplot(url_5_tbl, aes(x = "", y = total_count, fill = estatus)) +
+  geom_col() +
+  geom_text(aes(label = porce),
+            position = position_stack(vjust = 0.5)) +
+  coord_polar(theta = "y")
+url_5_tbl$porce <- sapply(url_5_tbl$total_count,porcentaje)
+
+
+```
