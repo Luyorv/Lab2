@@ -100,3 +100,17 @@ url_rela <- df_links3[df_links3$url_cat == 'relativa',]
 
 
 hist(x = df_links3$total_count, labels = df_links3$url, breaks = 10, col = "blue", main = "Frecuencia de aparicion de URL Absolutas")
+
+
+#Pregunta 2.2
+
+
+url_barras_1 <- df_links3 %>% filter(grepl('www.mediawiki.org', url))
+
+url_barras_2 <- df_links3 %>% filter(!grepl('www.mediawiki.org', url))
+
+ggplot(data=df_links3, aes(x=url_cat, y=total_count)) +
+  geom_bar(stat="identity", fill="steelblue")+
+  geom_text(aes(label=total_count), vjust=1.6, size=3.5)+
+  theme_minimal()
+
