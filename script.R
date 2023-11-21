@@ -57,3 +57,46 @@ df_links3$estatus <- sapply(df_links3$url,getstatuscode)
 
 df_links3$enlace <- sapply(df_links3$url,urlstandar)
 
+#Pregunta 2.1
+
+rela_norela <- function(url){
+  if (startsWith(url,'//')) {
+    return('absoluta')
+  }
+  if (startsWith(url,'http')) {
+    return('absoluta')
+  }
+  if(startsWith(url,'/')){
+    return('relativa')
+  }
+  if(grepl('#', url)){
+    return('absoluta')
+  }
+  return(url)
+}
+
+df_links3$url_cat <- sapply(df_links3$url,rela_norela)
+
+library(ggplot2)
+
+par(mfrow = c(1, 2), mar = c(4, 4, 2, 1), oma = c(0, 0, 2, 0))
+with(airquality, {
+  plot(df_links3$total_count, Ozone, main = "Ozone and Wind")
+  plot(Solar.R, Ozone, main = "Ozone and Solar Radiation")
+  
+})
+
+url_2_tbl <- df_links3 %>% group_by(url_cat)
+
+url_2_tbl <- df_links3 %>% group_by(url_cat,url) %>%  summarise(total_count_cat=n(), .groups = 'drop')
+
+hist(x = df_links3$url_cat, breaks = 10, col = "blue", main = "CVSSv3 Score
+distribution")
+
+url_abs <- df_links3[df_links3$url_cat == 'absoluta',]
+
+
+url_rela <- df_links3[df_links3$url_cat == 'relativa',]
+
+
+hist(x = df_links3$total_count, labels = df_links3$url, breaks = 10, col = "blue", main = "Frecuencia de aparicion de URL Absolutas")
