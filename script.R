@@ -28,7 +28,7 @@ df_links2 <- agg_tbl %>% as.data.frame()
 #pregunta 1.5
 
 getstatuscode <- function(url){
-  #Sys.sleep(runif(1, min=1, max=1))
+  Sys.sleep(runif(1, min=1, max=4))
   demo1 <- httr::GET(urlstandar(url))
   res <- head(demo1)
   return(res$status_code)
