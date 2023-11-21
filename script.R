@@ -114,3 +114,20 @@ ggplot(data=df_links3, aes(x=url_cat, y=total_count)) +
   geom_text(aes(label=total_count), vjust=1.6, size=3.5)+
   theme_minimal()
 
+#Pregunta 2.3
+
+url_5_tbl <- df_links3 %>% group_by(estatus) %>%  summarise(total_count=n(), .groups = 'drop')
+
+porcentaje <- function(num){
+  dd <- paste((((num/166)*100)),"%")
+  return(dd)
+}
+
+ggplot(url_5_tbl, aes(x = "", y = total_count, fill = estatus)) +
+  geom_col() +
+  geom_text(aes(label = porce),
+            position = position_stack(vjust = 0.5)) +
+  coord_polar(theta = "y")
+url_5_tbl$porce <- sapply(url_5_tbl$total_count,porcentaje)
+
+
